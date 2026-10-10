@@ -193,6 +193,7 @@ blockquote, .example { margin: 1rem 0; padding: 0.8rem 1rem; background: var(--s
   border-radius: 999px;
   padding: 0.45rem 0.8rem;
   box-shadow: var(--shadow);
+  border: 3px solid #e36a45;
 }
 .timer { margin-left: 0; }
 .sparkie-count.pop { animation: pop 0.45s ease; }

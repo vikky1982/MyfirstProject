@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Word Quest</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='34' r='22' fill='%23f0b429'/%3E%3Ccircle cx='22' cy='32' r='9' fill='%23fffdf8'/%3E%3Ccircle cx='42' cy='32' r='9' fill='%23fffdf8'/%3E%3Ccircle cx='23' cy='33' r='3.2' fill='%23243022'/%3E%3Ccircle cx='43' cy='33' r='3.2' fill='%23243022'/%3E%3Cpath d='M29 43h6l-3 6z' fill='%23e36a45'/%3E%3C/svg%3E">
   <style>
 :root {
   --ink: #243022;
@@ -201,6 +203,7 @@ blockquote, .example { margin: 1rem 0; padding: 0.8rem 1rem; background: var(--s
   border-radius: 999px;
   padding: 0.45rem 0.8rem;
   box-shadow: var(--shadow);
+  border: 3px solid #e36a45;
 }
 .timer { margin-left: 0; }
 .sparkie-count.pop { animation: pop 0.45s ease; }
@@ -942,7 +945,7 @@ var WORDQUEST_DATA = {"levels":{"1":{"name":"Seedling","emoji":"\ud83c\udf31","b
 
   function welcomeHtml() {
     return '<section class="hero-card"><p class="kicker">Olive the owl says hello</p><h1>Five new words a day.</h1>' +
-      '<p class="lead">Open this file in any browser. No install. Words start friendly and get harder. Progress stays on this computer.</p>' +
+      '<p class="lead">Every correct answer gives a sparkie. Words start friendly and get harder. Progress stays on this computer.</p>' +
       (note ? banner() : "") +
       '<form class="stack" data-answer="welcome"><label for="name">What should Olive call you?</label>' +
       '<input id="name" name="name" maxlength="20" autocomplete="nickname" placeholder="Your name" autofocus>' +

@@ -314,7 +314,7 @@
 
   function welcomeHtml() {
     return '<section class="hero-card"><p class="kicker">Olive the owl says hello</p><h1>Five new words a day.</h1>' +
-      '<p class="lead">Open this file in any browser. No install. Words start friendly and get harder. Progress stays on this computer.</p>' +
+      '<p class="lead">Every correct answer gives a sparkie. Words start friendly and get harder. Progress stays on this computer.</p>' +
       (note ? banner() : "") +
       '<form class="stack" data-answer="welcome"><label for="name">What should Olive call you?</label>' +
       '<input id="name" name="name" maxlength="20" autocomplete="nickname" placeholder="Your name" autofocus>' +
