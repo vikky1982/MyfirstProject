@@ -77,6 +77,39 @@
     window.speechSynthesis.speak(utterance);
   });
 
+  function burstSparkles(x, y) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    var layer = document.getElementById("sparkles");
+    if (!layer) return;
+    var glyphs = ["✦", "✧", "✸", "★", "✶"];
+    var colors = ["#f0b429", "#e36a45", "#2f7d4a", "#fff4c2", "#7eb6d9"];
+    for (var i = 0; i < 26; i++) {
+      var spark = document.createElement("span");
+      spark.className = "spark";
+      spark.textContent = glyphs[i % glyphs.length];
+      spark.style.left = x + "px";
+      spark.style.top = y + "px";
+      spark.style.color = colors[i % colors.length];
+      var angle = Math.random() * Math.PI * 2;
+      var dist = 50 + Math.random() * 140;
+      spark.style.setProperty("--dx", Math.cos(angle) * dist + "px");
+      spark.style.setProperty("--dy", Math.sin(angle) * dist - 30 + "px");
+      layer.appendChild(spark);
+      setTimeout(function (node) { node.remove(); }, 750, spark);
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    var choice = event.target.closest("button.choice");
+    if (!choice || !choice.form) return;
+    choice.form.dataset.sparkX = String(event.clientX);
+    choice.form.dataset.sparkY = String(event.clientY);
+  }, true);
+
+  if (document.querySelector(".banner.is-good, .banner.is-level, .is-celebrate")) {
+    burstSparkles(window.innerWidth / 2, 170);
+  }
+
   var filter = document.getElementById("filter");
   if (filter) {
     filter.addEventListener("input", function () {

@@ -10,7 +10,11 @@ Word Quest helps a child learn vocabulary a little at a time.
 
 Unfinished words carry to the next day and count toward that day's five. Time away from the page does not count. The day follows the clock on the device.
 
-## Run it
+## Open it in a browser
+
+Double-click `browser/index.html`, or drag that file into Chrome, Edge, or Firefox. Nothing else is required. A correct answer throws sparkles. Progress stays in that browser.
+
+## Run the server version
 
 ```bash
 pip install -r requirements.txt

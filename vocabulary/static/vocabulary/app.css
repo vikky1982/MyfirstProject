@@ -361,6 +361,16 @@ input[type="text"], input[type="search"], input:not([type]) {
   text-decoration: underline;
 }
 
+.sparkle-layer { position: fixed; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+.spark {
+  position: fixed;
+  font-size: 1.2rem;
+  animation: burst 720ms ease-out forwards;
+}
+@keyframes burst {
+  to { transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(140deg); opacity: 0; }
+}
+
 .noscript {
   max-width: 920px;
   margin: 0 auto 2rem;

@@ -13,6 +13,7 @@
   <meta name="theme-color" content="#2f7d4a">
 </head>
 <body {% if show_timer %}data-remaining="{{ seconds_remaining }}" data-limit="{{ daily_limit }}" data-heartbeat="{% url 'vocabulary:heartbeat' %}" data-timeup="{% url 'vocabulary:timeup' %}"{% endif %}>
+  <div id="sparkles" class="sparkle-layer" aria-hidden="true"></div>
   <a class="skip" href="#main">Skip to the words</a>
   <header class="top">
     <a class="brand" href="{% url 'vocabulary:home' %}">
