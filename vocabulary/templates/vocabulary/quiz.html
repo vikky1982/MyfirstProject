@@ -1,0 +1,32 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}Quiz · Word Quest{% endblock %}
+{% block content %}
+{% if notes.quiz_note %}<p class="banner is-level">{{ notes.quiz_note }}</p>{% endif %}
+{% if notes.level_note %}<p class="banner is-level">{{ notes.level_note }}</p>{% endif %}
+{% if error %}<p class="banner is-bad" role="alert">{{ error }}</p>{% endif %}
+
+<p class="kicker">Quiz · words {{ attempt.milestone|add:"-29" }}–{{ attempt.milestone }}</p>
+<ol class="dots" aria-label="Quiz progress">
+  {% for item in attempt.answers.all %}
+    <li class="{% if item.selected %}is-done{% elif item.id == answer.id %}is-now{% endif %}">{{ item.position }}</li>
+  {% endfor %}
+</ol>
+
+<article class="word-card">
+  <p class="kicker">Question {{ answer.position }} of {{ attempt.total }}</p>
+  <h1 class="word">{{ answer.word.text }}</h1>
+  <p class="pron">{{ answer.word.pronunciation }} · {{ answer.word.part_of_speech }}</p>
+  <button class="hear" type="button" data-speak="{{ answer.word.text }}">Hear it</button>
+  <p class="prompt">What does this word mean? The example stays hidden until the end.</p>
+</article>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <input type="hidden" name="answer_id" value="{{ answer.id }}">
+  <div class="choices">
+    {% for choice in answer.choices %}
+      <button class="choice" type="submit" name="choice" value="{{ choice }}">{{ choice }}</button>
+    {% endfor %}
+  </div>
+</form>
+{% endblock %}

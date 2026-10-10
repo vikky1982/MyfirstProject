@@ -1,0 +1,45 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}Quiz result · Word Quest{% endblock %}
+{% block content %}
+<section class="hero-card {% if attempt.score >= 8 %}is-celebrate{% endif %}">
+  <p class="kicker">Quiz on words up to {{ attempt.milestone }}</p>
+  <h1>{{ attempt.score }} / {{ attempt.total }}</h1>
+  {% if attempt.score == attempt.total %}
+    <p class="lead">Perfect. Olive is doing a happy spin.</p>
+  {% elif attempt.score >= 8 %}
+    <p class="lead">Wonderful. Those words really stuck.</p>
+  {% elif attempt.score >= 6 %}
+    <p class="lead">Good work. A little more practice and they will stick.</p>
+  {% else %}
+    <p class="lead">Brave try. Let's look at the tricky ones together.</p>
+  {% endif %}
+  <div class="button-row">
+    <a class="primary" href="{% url 'vocabulary:home' %}">Back to today</a>
+    <form method="post" action="{% url 'vocabulary:quiz_retake' %}">
+      {% csrf_token %}
+      <input type="hidden" name="milestone" value="{{ attempt.milestone }}">
+      <button class="secondary" type="submit">Try this quiz again</button>
+    </form>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Let's check the answers</h2>
+  {% for item in answers %}
+    {% if item.is_correct %}
+      <details class="result ok">
+        <summary>{{ item.word.text }} — correct</summary>
+        <p>{{ item.word.meaning }}</p>
+        <p class="example">{{ item.word.example }}</p>
+      </details>
+    {% else %}
+      <article class="result miss" id="word-{{ item.word.id }}">
+        <h3>{{ item.word.text }}</h3>
+        <p><strong>Meaning:</strong> {{ item.correct_text }}</p>
+        {% if item.selected %}<p class="muted">You picked: {{ item.selected }}</p>{% endif %}
+        <p class="example">{{ item.word.example }}</p>
+      </article>
+    {% endif %}
+  {% endfor %}
+</section>
+{% endblock %}

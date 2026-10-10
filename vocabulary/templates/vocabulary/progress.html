@@ -1,0 +1,65 @@
+{% extends "vocabulary/base.html" %}
+{% load vocabulary_extras %}
+{% block title %}Progress · Word Quest{% endblock %}
+{% block content %}
+<section class="hero-card">
+  <p class="kicker">{{ learner.name }}'s progress</p>
+  <h1>{{ snap.learned_count }} words learned</h1>
+  <p class="lead">{{ snap.streak_message }} Time used today: {{ snap.seconds_used|clock }} of {{ daily_limit|clock }}.</p>
+</section>
+
+<section class="card">
+  <h2>Levels</h2>
+  <p class="muted">Word Quest gets harder on purpose. Seedling words are easy to picture. Word Wizard words are rare, with plain meanings so you can still use them.</p>
+  {% for level in snap.levels %}
+    <article class="level-block is-{{ level.state }}">
+      <header>
+        <h3>{{ level.emoji }} {{ level.name }}</h3>
+        <span>{{ level.learned }}/{{ level.total }}</span>
+      </header>
+      <div class="track" aria-hidden="true">
+        <div class="bar" style="width: {% widthratio level.learned level.total 100 %}%"></div>
+      </div>
+      <p>{{ level.blurb }}</p>
+      {% if level.state == "locked" %}
+        <p class="muted">Still ahead. Finish the earlier words first.</p>
+      {% elif level.words %}
+        <ul class="chip-list">
+          {% for word in level.words %}
+            <li>{{ word.text }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </article>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Quizzes</h2>
+  {% if snap.quizzes %}
+    <ul class="quiz-list">
+      {% for quiz in snap.quizzes %}
+        <li>
+          <span>After {{ quiz.milestone }} words</span>
+          <strong>{{ quiz.score }}/{{ quiz.total }}</strong>
+          <form method="post" action="{% url 'vocabulary:quiz_retake' %}">
+            {% csrf_token %}
+            <input type="hidden" name="milestone" value="{{ quiz.milestone }}">
+            <button class="linkish" type="submit">Retake</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Your first quiz unlocks after 30 words. It has 10 questions from those words.</p>
+  {% endif %}
+  {% if snap.words_until_quiz %}
+    <p class="muted">{{ snap.words_until_quiz }} more new words until the next quiz.</p>
+  {% endif %}
+</section>
+
+<section class="card parent">
+  <h2>For a grown-up nearby</h2>
+  <p>Each local day gives five new words, in order, so the vocabulary gets harder level by level. A 10-question quiz unlocks every 30 words and has to be finished before the next set. The timer allows 15 minutes of active use, then the lesson locks until the next day. Progress is saved for {{ learner.name }} on this browser.</p>
+</section>
+{% endblock %}

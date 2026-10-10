@@ -1,0 +1,30 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}Review · Word Quest{% endblock %}
+{% block content %}
+<section class="hero-card">
+  <p class="kicker">Review</p>
+  <h1>Words you already know</h1>
+  {% if groups %}
+    <label for="filter">Find a word</label>
+    <input id="filter" type="search" placeholder="Try brave or ancient" autocomplete="off">
+  {% else %}
+    <p class="lead">Learn today's words first. They will wait here when you want another look.</p>
+    <a class="primary" href="{% url 'vocabulary:learn' %}">Start learning</a>
+  {% endif %}
+</section>
+{% for group in groups %}
+  <section class="card">
+    <h2>{{ group.meta.emoji }} {{ group.meta.name }}</h2>
+    {% for item in group.items %}
+      <details class="review-item" id="word-{{ item.word.id }}" data-word="{{ item.word.text|lower }}" data-meaning="{{ item.word.meaning|lower }}">
+        <summary>{{ item.word.text }}</summary>
+        <p class="pron">{{ item.word.pronunciation }} · {{ item.word.part_of_speech }}</p>
+        <p>{{ item.word.meaning }}</p>
+        <p class="tip">{{ item.word.tip }}</p>
+        <p class="example">{{ item.word.example }}</p>
+        <button class="hear" type="button" data-speak="{{ item.word.text }}. {{ item.word.meaning }}">Hear it</button>
+      </details>
+    {% endfor %}
+  </section>
+{% endfor %}
+{% endblock %}

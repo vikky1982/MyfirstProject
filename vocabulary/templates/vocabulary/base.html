@@ -1,0 +1,65 @@
+{% load static vocabulary_extras %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Word Quest{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@560;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'vocabulary/app.css' %}">
+  <link rel="icon" href="{% static 'vocabulary/favicon.svg' %}" type="image/svg+xml">
+  <meta name="theme-color" content="#2f7d4a">
+</head>
+<body {% if show_timer %}data-remaining="{{ seconds_remaining }}" data-limit="{{ daily_limit }}" data-heartbeat="{% url 'vocabulary:heartbeat' %}" data-timeup="{% url 'vocabulary:timeup' %}"{% endif %}>
+  <a class="skip" href="#main">Skip to the words</a>
+  <header class="top">
+    <a class="brand" href="{% url 'vocabulary:home' %}">
+      <svg class="owl" viewBox="0 0 64 64" aria-hidden="true">
+        <circle cx="32" cy="34" r="22" fill="#f0b429"/>
+        <circle cx="22" cy="32" r="9" fill="#fffdf8"/>
+        <circle cx="42" cy="32" r="9" fill="#fffdf8"/>
+        <circle cx="23" cy="33" r="3.2" fill="#243022"/>
+        <circle cx="43" cy="33" r="3.2" fill="#243022"/>
+        <path d="M29 43h6l-3 6z" fill="#e36a45"/>
+        <path d="M14 24c4-10 12-14 18-14s14 4 18 14" fill="none" stroke="#243022" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <span>Word Quest</span>
+    </a>
+    {% if learner and not locked %}
+      <nav class="nav" aria-label="Pages">
+        <a href="{% url 'vocabulary:home' %}">Today</a>
+        <a href="{% url 'vocabulary:review' %}">Review</a>
+        <a href="{% url 'vocabulary:progress' %}">Progress</a>
+      </nav>
+    {% endif %}
+    {% if show_timer %}
+      <div class="timer {% if seconds_remaining <= 120 %}is-low{% endif %}" id="timer">
+        <div class="timer-top">
+          <span>Time left</span>
+          <strong data-clock>{{ seconds_remaining|clock }}</strong>
+        </div>
+        <div class="track" aria-hidden="true"><div class="bar" data-bar style="width: {% widthratio seconds_remaining daily_limit 100 %}%"></div></div>
+      </div>
+    {% endif %}
+  </header>
+  {% if show_timer %}
+    <form id="heartbeat-form" hidden>{% csrf_token %}</form>
+  {% endif %}
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="foot">
+    <p>5 new words a day · a quiz every 30 · 15 minutes, then rest</p>
+    {% if learner %}
+      <form method="post" action="{% url 'vocabulary:switch' %}">
+        {% csrf_token %}
+        <button class="linkish" type="submit">Switch player</button>
+      </form>
+    {% endif %}
+  </footer>
+  <script src="{% static 'vocabulary/app.js' %}"></script>
+  <noscript><p class="noscript">JavaScript runs the 15-minute timer and the Hear it button. You can still read and answer without it, but the timer is stricter with JavaScript on.</p></noscript>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}{{ word.text }} · Word Quest{% endblock %}
+{% block content %}
+{% if notes.level_note %}<p class="banner is-level">{{ notes.level_note }}</p>{% endif %}
+{% if notes.just_learned %}<p class="banner is-good">Yes! “{{ notes.just_learned }}” is yours.</p>{% endif %}
+{% if error %}<p class="banner is-bad" role="alert">{{ error }}</p>{% endif %}
+
+<ol class="dots" aria-label="Today's words">
+  {% for item in board %}
+    <li class="{% if item.learned %}is-done{% elif item.id == current.id %}is-now{% endif %}">{{ forloop.counter }}</li>
+  {% endfor %}
+</ol>
+
+<article class="word-card">
+  <p class="kicker">Level {{ word.level }} of 6 · {{ level_meta.name }}</p>
+  <p class="pips" aria-label="Difficulty {{ word.level }} of 6">
+    {% for mark in "123456" %}
+      <span class="{% if forloop.counter <= word.level %}is-on{% endif %}"></span>
+    {% endfor %}
+  </p>
+  <h1 class="word">{{ word.text }}</h1>
+  <p class="pron">{{ word.pronunciation }} · {{ word.part_of_speech }}</p>
+  <button class="hear" type="button" data-speak="{{ word.text }}. {{ word.example }}">Hear it</button>
+  <blockquote>{{ word.example }}</blockquote>
+  <details class="peek" {% if show_meaning %}open{% endif %}>
+    <summary>Need a peek at the meaning?</summary>
+    <p>{{ word.meaning }}</p>
+    <p class="tip">{{ word.tip }}</p>
+  </details>
+</article>
+
+<form method="post" class="stack">
+  {% csrf_token %}
+  <h2>What does it mean?</h2>
+  <div class="choices">
+    {% for choice in choices %}
+      <button class="choice" type="submit" name="choice" value="{{ choice }}">{{ choice }}</button>
+    {% endfor %}
+  </div>
+</form>
+{% endblock %}

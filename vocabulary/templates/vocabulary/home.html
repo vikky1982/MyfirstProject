@@ -1,0 +1,89 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}Today · Word Quest{% endblock %}
+{% block content %}
+<section class="hero-card">
+  <p class="kicker">Hi, {{ learner.name }}</p>
+  <h1>
+    {% if snap.state == "quiz" %}
+      Quiz time.
+    {% elif snap.state == "done" %}
+      You did it for today.
+    {% elif snap.state == "champion" %}
+      You learned the whole path.
+    {% elif snap.current and snap.current != snap.board.0 %}
+      Ready to continue?
+    {% else %}
+      Five words are waiting.
+    {% endif %}
+  </h1>
+  <p class="streak">{{ snap.streak_message }}</p>
+  {% if notes.level_note %}<p class="banner is-level">{{ notes.level_note }}</p>{% endif %}
+  {% if notes.day_note %}<p class="banner is-good">{{ notes.day_note }}</p>{% endif %}
+  {% if notes.just_learned %}<p class="banner is-good">Yes! “{{ notes.just_learned }}” is yours.</p>{% endif %}
+
+  <div class="mission">
+    {% if snap.state == "quiz" %}
+      <p>You have learned {{ snap.learned_count }} words. Show what you remember with 10 questions.</p>
+      <a class="primary" href="{% url 'vocabulary:quiz' %}">Start the quiz</a>
+    {% elif snap.state == "champion" %}
+      <p>Olive is proud. You can review any word, and your quizzes stay on the progress page.</p>
+      <a class="primary" href="{% url 'vocabulary:review' %}">Review your words</a>
+    {% elif snap.state == "done" %}
+      <p>Come back tomorrow. The next five words will be a step harder.</p>
+      <a class="secondary" href="{% url 'vocabulary:review' %}">Review what you know</a>
+    {% else %}
+      <p>Today's level: {{ snap.current_level.emoji }} {{ snap.current_level.name }}. {{ snap.current_level.blurb }}</p>
+      {% if snap.board %}
+        <ol class="dots" aria-label="Today's words">
+          {% for item in snap.board %}
+            <li class="{% if item.learned %}is-done{% elif snap.current and item.id == snap.current.id %}is-now{% endif %}">{{ forloop.counter }}</li>
+          {% endfor %}
+        </ol>
+      {% endif %}
+      <a class="primary" href="{% url 'vocabulary:learn' %}">
+        {% if snap.current and snap.current != snap.board.0 %}Continue today's words{% else %}Start today's words{% endif %}
+      </a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="stat-row">
+  <article>
+    <strong>{{ snap.learned_count }}</strong>
+    <span>words learned</span>
+  </article>
+  <article>
+    <strong>{{ snap.words_until_quiz }}</strong>
+    <span>{% if snap.quiz_ready %}quiz is ready{% else %}words until a quiz{% endif %}</span>
+  </article>
+  <article>
+    <strong>{{ snap.streak }}</strong>
+    <span>day streak</span>
+  </article>
+</section>
+
+<section class="card">
+  <h2>Your path gets harder</h2>
+  <p class="muted">Each level is tougher than the one before. You move on only after the words you have now.</p>
+  <ol class="path">
+    {% for level in snap.levels %}
+      <li class="path-stop is-{{ level.state }}">
+        <span class="path-emoji" aria-hidden="true">{{ level.emoji }}</span>
+        <span class="path-name">{{ level.name }}</span>
+        <span class="path-count">{{ level.learned }}/{{ level.total }}</span>
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+
+{% if snap.misses %}
+<section class="card">
+  <h2>Peek at tricky words</h2>
+  <ul class="chip-list">
+    {% for miss in snap.misses %}
+      <li><a href="{% url 'vocabulary:review' %}#word-{{ miss.word.id }}">{{ miss.word.text }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+{% endblock %}

@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'employee.apps.EmployeeConfig',
+    'vocabulary.apps.VocabularyConfig',
 ]
 
 MIDDLEWARE = [
@@ -63,6 +64,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'vocabulary.context_processors.hud',
             ],
         },
     },
@@ -111,6 +113,9 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Keep a child's Word Quest progress for a year.
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 365
 
 
 # Static files (CSS, JavaScript, Images)

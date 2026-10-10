@@ -1,0 +1,10 @@
+{% extends "vocabulary/base.html" %}
+{% block title %}Rest time · Word Quest{% endblock %}
+{% block content %}
+<section class="hero-card">
+  <p class="kicker">Olive is tucking the words in</p>
+  <h1>That's 15 minutes.</h1>
+  <p class="lead">Your brain did real work today. Word Quest opens again tomorrow, and everything you learned stays saved.</p>
+  <p class="streak">{{ snap.learned_count }} words learned · {{ snap.streak_message }}</p>
+</section>
+{% endblock %}
