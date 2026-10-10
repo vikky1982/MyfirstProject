@@ -1,9 +1,8 @@
-"""Daily lessons, quizzes, streaks, and the 15-minute limit.
+"""Daily lessons, quizzes, and streaks.
 
-A learner may meet at most five new words on a local calendar day.
-Words are handed out in level order, so later days are harder.
+A learner meets ten new words at a time, in level order, so later sets are harder.
 Every 30 learned words, a quiz is required before the next words unlock.
-Active use is counted up to 15 minutes; time away from the page is not.
+There is no daily time limit.
 """
 
 import random
@@ -13,14 +12,14 @@ from datetime import timedelta
 from django.db import IntegrityError, transaction
 
 from django.conf import settings
-from django.db.models import Max, Q
+from django.db.models import Max
 from django.utils import timezone
 
 from .codes import new_learner_code
 from .models import Assignment, BankMeta, DailyPlan, Learner, QuizAnswer, QuizAttempt, Word
 from .words import DECOYS, LEVELS, bank_signature, iter_words
 
-WORDS_PER_DAY = getattr(settings, "VOCAB_WORDS_PER_DAY", 5)
+WORDS_PER_DAY = getattr(settings, "VOCAB_WORDS_PER_DAY", 10)
 QUIZ_EVERY = getattr(settings, "VOCAB_QUIZ_EVERY", 30)
 QUIZ_LENGTH = getattr(settings, "VOCAB_QUIZ_LENGTH", 10)
 DAILY_LIMIT_SECONDS = getattr(settings, "VOCAB_DAILY_LIMIT_SECONDS", 15 * 60)
@@ -196,22 +195,55 @@ def ensure_daily_plan(learner, today):
 
 def today_board(learner, today):
     ensure_daily_plan(learner, today)
-    carry = list(
+    unfinished = list(_ordered_assignments(unfinished_qs(learner)))
+    if unfinished:
+        return unfinished[:WORDS_PER_DAY]
+    learned = list(
         _ordered_assignments(
-            Assignment.objects.filter(learner=learner)
-            .exclude(assigned_on=today)
-            .filter(Q(learned=False) | Q(learned_on=today))
-            .select_related("word")
+            Assignment.objects.filter(learner=learner, learned=True).select_related("word")
         )
     )
-    today_items = list(
-        _ordered_assignments(
-            Assignment.objects.filter(learner=learner, assigned_on=today).select_related(
-                "word"
-            )
-        )
+    return learned[-WORDS_PER_DAY:]
+
+
+def continue_set(learner, today):
+    """Open another set of words immediately, or start the bank over."""
+    if quiz_is_due(learner) and not has_unfinished(learner):
+        return
+    if not words_remaining_in_bank(learner) and not has_unfinished(learner):
+        Assignment.objects.filter(learner=learner).delete()
+        QuizAttempt.objects.filter(learner=learner).delete()
+        DailyPlan.objects.filter(learner=learner).delete()
+        ensure_daily_plan(learner, today)
+        return
+    plan = ensure_daily_plan(learner, today)
+    if has_unfinished(learner) or plan.waiting_for_quiz:
+        return
+    room = room_for_new_words(learner)
+    need = min(room, WORDS_PER_DAY)
+    if need <= 0:
+        plan.waiting_for_quiz = True
+        plan.words_finished = False
+        plan.save(update_fields=["waiting_for_quiz", "words_finished"])
+        return
+    already = Assignment.objects.filter(learner=learner).count()
+    next_words = list(
+        Word.objects.exclude(
+            id__in=Assignment.objects.filter(learner=learner).values("word_id")
+        ).order_by("level", "sequence")[:need]
     )
-    return carry + today_items
+    for offset, word in enumerate(next_words, start=1):
+        Assignment.objects.create(
+            learner=learner,
+            word=word,
+            assigned_on=today,
+            position=already + offset,
+        )
+    learned_today = Assignment.objects.filter(learner=learner, learned_on=today).count()
+    plan.words_finished = False
+    plan.waiting_for_quiz = False
+    plan.target_count = learned_today + len(next_words)
+    plan.save(update_fields=["words_finished", "waiting_for_quiz", "target_count"])
 
 
 def current_assignment(learner, today):

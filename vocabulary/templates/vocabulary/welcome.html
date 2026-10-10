@@ -3,8 +3,8 @@
 {% block content %}
 <section class="hero-card">
   <p class="kicker">Olive the owl says hello</p>
-  <h1>Five new words a day.</h1>
-  <p class="lead">They start friendly and get harder as you grow. After 30 words, you take a quiz. The app stops after 15 minutes so your brain can rest.</p>
+  <h1>Ten new words at a time.</h1>
+  <p class="lead">They start friendly and get harder as you grow. After 30 words, you take a quiz. You can keep playing as long as you like.</p>
   {% if error %}<p class="banner is-bad" role="alert">{{ error }}</p>{% endif %}
   <form method="post" class="stack">
     {% csrf_token %}

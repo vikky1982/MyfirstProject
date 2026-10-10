@@ -32,16 +32,6 @@
     });
   }
 
-  function clock(seconds) {
-    seconds = Math.max(0, seconds | 0);
-    return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
-  }
-
-  function remaining() {
-    if (state.usageDate !== today()) return quest.LIMIT;
-    return Math.max(0, quest.LIMIT - (state.secondsUsed || 0));
-  }
-
   function burst(x, y) {
     var layer = document.getElementById("sparkles");
     if (!layer) return;
@@ -115,7 +105,7 @@
     }
     nav.hidden = false;
     nav.innerHTML = '<button type="button" data-go="home">Today</button><button type="button" data-go="review">Review</button><button type="button" data-go="progress">Progress</button>';
-    timer.hidden = false;
+    timer.hidden = true;
     var badge = document.getElementById("sparkie-count");
     if (!badge) {
       badge = document.createElement("div");
@@ -125,10 +115,6 @@
     }
     badge.hidden = false;
     badge.textContent = "✦ " + (state.sparkies || 0);
-    var left = remaining();
-    timer.classList.toggle("is-low", left <= 120);
-    timer.querySelector("[data-clock]").textContent = clock(left);
-    timer.querySelector("[data-bar]").style.width = (left / quest.LIMIT) * 100 + "%";
     who.innerHTML = "Playing as " + esc(state.name) + ' · <button class="linkish" type="button" data-go="switch">Switch player</button>';
   }
 
@@ -151,7 +137,7 @@
     var current = quest.currentWord(state, words, day);
     var mode = quest.screen(state, words, day);
     var level = levelMeta(currentLevelNumber());
-    var title = "Five words are waiting.";
+    var title = "Ten words are waiting.";
     var body = "<p>Today's level: " + level.emoji + " " + esc(level.name) + ". " + esc(level.blurb) + "</p>" +
       dots(items, current) +
       '<button class="primary" type="button" data-go="learn">' + (items.some(function (item) { return item.learned; }) ? "Continue today's words" : "Start today's words") + "</button>";
@@ -160,12 +146,14 @@
       body = "<p>You have learned " + state.learned.length + " words. Show what you remember with 10 questions.</p>" +
         '<button class="primary" type="button" data-go="quiz">Start the quiz</button>';
     } else if (mode === "done") {
-      title = "You did it for today.";
-      body = "<p>Come back tomorrow. The next five words will be a step harder.</p>" +
+      title = "Ten words done.";
+      body = "<p>Keep going. The next ten are ready, and they get harder as you climb.</p>" +
+        '<button class="primary" type="button" data-go="keep">Keep playing</button>' +
         '<button class="secondary" type="button" data-go="review">Review what you know</button>';
     } else if (mode === "champion") {
       title = "You learned the whole path.";
-      body = '<button class="primary" type="button" data-go="review">Review your words</button>';
+      body = "<p>Sparkies stay with you. The words start again, from the friendly ones.</p>" +
+        '<button class="primary" type="button" data-go="keep">Play again</button>';
     }
     var learned = state.learned.length;
     var into = learned % quest.QUIZ_EVERY;
@@ -313,44 +301,35 @@
   }
 
   function welcomeHtml() {
-    return '<section class="hero-card"><p class="kicker">Olive the owl says hello</p><h1>Five new words a day.</h1>' +
-      '<p class="lead">Every correct answer gives a sparkie. Words start friendly and get harder. Progress stays on this computer.</p>' +
+    return '<section class="hero-card"><p class="kicker">Olive the owl says hello</p><h1>Ten new words at a time.</h1>' +
+      '<p class="lead">Every correct answer gives a sparkie. Words start friendly and get harder. Keep playing as long as you like. Progress stays on this computer.</p>' +
       (note ? banner() : "") +
       '<form class="stack" data-answer="welcome"><label for="name">What should Olive call you?</label>' +
       '<input id="name" name="name" maxlength="20" autocomplete="nickname" placeholder="Your name" autofocus>' +
       '<button class="primary" type="submit">Let\'s go</button></form></section>';
   }
 
-  function timeupHtml() {
-    return '<section class="hero-card"><p class="kicker">Olive is tucking the words in</p><h1>That\'s 15 minutes.</h1>' +
-      "<p class=\"lead\">Your words are saved on this computer. Word Quest opens again tomorrow.</p><p class=\"streak\">" +
-      state.learned.length + " words learned · " + esc(quest.streakMessage(state, today())) + "</p></section>";
-  }
-
   function draw(nextView, sparkleAt) {
     var day = today();
-    var locked = state.name && state.usageDate === day && state.secondsUsed >= quest.LIMIT;
-    if (locked) nextView = "timeup";
-    else if (!state.name) nextView = "welcome";
+    if (!state.name) nextView = "welcome";
     else if (!nextView || nextView === "home" || nextView === "learn" || nextView === "quiz") {
       var mode = quest.screen(state, words, day);
       if (!nextView || nextView === "home") {
         if (mode === "result") nextView = "result";
         else nextView = "home";
-      } else if (nextView === "learn" && (mode === "quiz" || mode === "result" || mode === "done" || mode === "champion" || mode === "timeup")) {
+      } else if (nextView === "learn" && (mode === "quiz" || mode === "result" || mode === "done" || mode === "champion")) {
         nextView = mode === "quiz" ? "quiz" : (mode === "result" ? "result" : "home");
       }
     }
     view = nextView;
     var html = view === "welcome" ? welcomeHtml() :
-      view === "timeup" ? timeupHtml() :
       view === "learn" ? learnHtml() :
       view === "quiz" ? quizHtml() :
       view === "result" ? resultHtml() :
       view === "progress" ? progressHtml() :
       view === "review" ? reviewHtml() : homeHtml();
     document.getElementById("app").innerHTML = html;
-    renderNav(locked || view === "welcome");
+    renderNav(view === "welcome");
     if (sparkleAt) burst(sparkleAt.x, sparkleAt.y);
     var field = document.getElementById("name") || document.getElementById("filter");
     if (field) field.focus();
@@ -387,6 +366,20 @@
       quest.startQuiz(state, words);
       save();
       draw("quiz");
+      return;
+    }
+    if (target === "keep") {
+      var dayNow = today();
+      quest.keepPlaying(state, words, dayNow);
+      var nextMode = quest.screen(state, words, dayNow);
+      if (nextMode === "quiz") {
+        quest.startQuiz(state, words);
+        note = { kind: "level", text: "Quiz time before the next words." };
+      } else {
+        note = { kind: "good", text: "Ten more words. Let's go." };
+      }
+      save();
+      draw(nextMode === "quiz" ? "quiz" : "learn");
       return;
     }
     draw(target);
@@ -432,7 +425,7 @@
         note = { kind: "level", text: "New level: " + meta.emoji + " " + meta.name + ". " + meta.blurb };
       }
       if (quest.quizDue(state)) note = { kind: "level", text: "You have learned " + state.learned.length + " words. Quiz time!" };
-      else if (quest.wordsFinished(state, day)) note = { kind: "good", text: "Those are your words for today. Come back tomorrow for five more." };
+      else if (quest.wordsFinished(state, day)) note = { kind: "good", text: "Those ten are done. Keep playing for the next ten." };
       if (result.fresh) giveSparkie(point.left + point.width / 2, point.top + point.height / 2);
       save();
       setTimeout(function () {
@@ -464,16 +457,6 @@
       item.hidden = query.length > 0 && hay.indexOf(query) === -1;
     });
   });
-
-  setInterval(function () {
-    if (!state.name || document.hidden) return;
-    var day = today();
-    var before = remaining();
-    quest.tick(state, day, true);
-    save();
-    if (before > 0 && remaining() === 0) draw("timeup");
-    else if (view !== "timeup") renderNav(false);
-  }, 1000);
 
   draw(state.name ? "home" : "welcome");
 })();

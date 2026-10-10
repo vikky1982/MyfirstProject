@@ -39,14 +39,10 @@ def with_learner(timed=True):
             today = services.local_today(learner)
             request.vocab_today = today
             if timed:
-                before = services.seconds_remaining(learner, today)
-                if before <= 0:
-                    return redirect("vocabulary:timeup")
                 request.remaining = services.touch(learner, active=True)
-                request.show_timer = True
             else:
                 request.remaining = services.seconds_remaining(learner, today)
-                request.show_timer = False
+            request.show_timer = False
             return view(request, *args, **kwargs)
 
         return wrapper
@@ -107,6 +103,13 @@ def home(request):
     )
 
 
+@require_POST
+@with_learner()
+def continue_set(request):
+    services.continue_set(request.learner, request.vocab_today)
+    return redirect("vocabulary:home")
+
+
 @with_learner()
 def learn(request):
     learner = request.learner
@@ -147,7 +150,7 @@ def learn(request):
                 return redirect("vocabulary:quiz")
             if services.current_assignment(learner, today) is None:
                 request.session["day_note"] = (
-                    "Those are your words for today. Come back tomorrow for five more."
+                    "Those ten are done. You can keep playing for the next ten."
                 )
                 return redirect("vocabulary:home")
             return redirect("vocabulary:learn")

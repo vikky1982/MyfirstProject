@@ -5,10 +5,9 @@
     root.WordQuest = factory();
   }
 })(typeof self !== "undefined" ? self : this, function () {
-  var PER_DAY = 5;
+  var PER_DAY = 10;
   var QUIZ_EVERY = 30;
   var QUIZ_LENGTH = 10;
-  var LIMIT = 15 * 60;
 
   function dateKey(date) {
     var y = date.getFullYear();
@@ -130,35 +129,48 @@
     }).slice(0, count);
   }
 
-  function fillPlan(state, words, today) {
-    var carry = unfinished(state).filter(function (item) {
+  function fillPlan(state, words, today, extra) {
+    var carry = extra ? [] : unfinished(state).filter(function (item) {
       return item.on !== today;
     });
-    var alreadyNew = state.assigned.filter(function (item) {
+    var alreadyNew = extra ? 0 : state.assigned.filter(function (item) {
       return item.on === today;
     }).length;
-    if (quizDue(state) && carry.length === 0 && alreadyNew === 0) {
+    if (!extra && quizDue(state) && carry.length === 0 && alreadyNew === 0) {
       state.planDate = today;
       state.planWords = [];
       state.waitingQuiz = true;
       return;
     }
     var room = Math.max(0, lastMilestone(state) + QUIZ_EVERY - state.assigned.length);
-    var openSlots = Math.max(0, PER_DAY - carry.length - alreadyNew);
+    var openSlots = extra ? PER_DAY : Math.max(0, PER_DAY - carry.length - alreadyNew);
     var need = Math.min(room, openSlots);
+    var added = [];
     nextWords(state, words, need).forEach(function (word) {
       state.assigned.push({ text: word.text, on: today });
+      added.push(word.text);
     });
     var learned = learnedSet(state);
     state.planDate = today;
-    state.planWords = carry.map(function (item) { return item.text; }).concat(
+    var planned = extra ? added : carry.map(function (item) { return item.text; }).concat(
       state.assigned.filter(function (item) {
         return item.on === today;
       }).map(function (item) { return item.text; })
     );
     state.waitingQuiz = false;
-    state.planWords = state.planWords.filter(function (text, index, list) {
+    state.planWords = planned.filter(function (text, index, list) {
       return list.indexOf(text) === index && (!learned[text] || learned[text].on === today);
+    });
+  }
+
+  function topUp(state, words, today) {
+    if (state.waitingQuiz || quizDue(state)) return;
+    if (!state.planWords || state.planWords.length === 0 || state.planWords.length >= PER_DAY) return;
+    var room = Math.max(0, lastMilestone(state) + QUIZ_EVERY - state.assigned.length);
+    var need = Math.min(room, PER_DAY - state.planWords.length);
+    nextWords(state, words, need).forEach(function (word) {
+      state.assigned.push({ text: word.text, on: today });
+      state.planWords.push(word.text);
     });
   }
 
@@ -169,7 +181,36 @@
     }
     if (state.waitingQuiz && !quizDue(state)) {
       fillPlan(state, words, today);
+      return;
     }
+    topUp(state, words, today);
+  }
+
+  function keepPlaying(state, words, today) {
+    if (quizDue(state) && unfinished(state).length === 0) {
+      state.waitingQuiz = true;
+      state.planWords = [];
+      return;
+    }
+    var left = orderedWords(words).filter(function (word) {
+      return !assignedSet(state)[word.text];
+    });
+    if (left.length === 0) {
+      var name = state.name;
+      var sparkies = state.sparkies || 0;
+      var streak = state.streak || 0;
+      var lastCompleted = state.lastCompleted || "";
+      var fresh = blankState();
+      fresh.name = name;
+      fresh.sparkies = sparkies;
+      fresh.streak = streak;
+      fresh.lastCompleted = lastCompleted;
+      Object.keys(state).forEach(function (key) { delete state[key]; });
+      Object.keys(fresh).forEach(function (key) { state[key] = fresh[key]; });
+      ensurePlan(state, words, today);
+      return;
+    }
+    fillPlan(state, words, today, true);
   }
 
   function board(state, words, today) {
@@ -306,7 +347,6 @@
   }
 
   function screen(state, words, today) {
-    if ((state.secondsUsed || 0) >= LIMIT && state.usageDate === today) return "timeup";
     if (!state.name) return "welcome";
     if (quizDue(state) && unfinished(state).length === 0) return "quiz";
     if (state.quiz && !state.quiz.done) return "quiz";
@@ -321,13 +361,8 @@
     return "learn";
   }
 
-  function tick(state, today, active) {
-    if (state.usageDate !== today) {
-      state.usageDate = today;
-      state.secondsUsed = 0;
-    }
-    if (active && state.secondsUsed < LIMIT) state.secondsUsed += 1;
-    return Math.max(0, LIMIT - state.secondsUsed);
+  function tick() {
+    return null;
   }
 
   function cleanName(raw) {
@@ -340,7 +375,6 @@
     PER_DAY: PER_DAY,
     QUIZ_EVERY: QUIZ_EVERY,
     QUIZ_LENGTH: QUIZ_LENGTH,
-    LIMIT: LIMIT,
     dateKey: dateKey,
     blankState: blankState,
     board: board,
@@ -355,6 +389,7 @@
     tick: tick,
     cleanName: cleanName,
     wordsFinished: wordsFinished,
-    ensurePlan: ensurePlan
+    ensurePlan: ensurePlan,
+    keepPlaying: keepPlaying
   };
 });
