@@ -10,11 +10,13 @@ import random
 import re
 from datetime import timedelta
 
+from django.db import IntegrityError, transaction
+
 from django.conf import settings
-from django.db import transaction
 from django.db.models import Max, Q
 from django.utils import timezone
 
+from .codes import new_learner_code
 from .models import Assignment, BankMeta, DailyPlan, Learner, QuizAnswer, QuizAttempt, Word
 from .words import DECOYS, LEVELS, bank_signature, iter_words
 
@@ -566,5 +568,22 @@ def review_groups(learner):
     return groups
 
 
-def recent_learners():
-    return list(Learner.objects.order_by("-last_played_on", "-id")[:8])
+def create_learner(name, offset):
+    for _ in range(8):
+        try:
+            with transaction.atomic():
+                return Learner.objects.create(
+                    name=name,
+                    utc_offset_minutes=offset,
+                    code=new_learner_code(),
+                )
+        except IntegrityError:
+            continue
+    raise RuntimeError("Could not create a return code.")
+
+
+def learner_from_code(raw):
+    code = re.sub(r"[^a-z0-9]", "", (raw or "").lower())
+    if not code:
+        return None
+    return Learner.objects.filter(code=code).first()

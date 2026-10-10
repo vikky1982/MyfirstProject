@@ -1,8 +1,11 @@
 from django.db import models
 
+from .codes import new_learner_code
+
 
 class Learner(models.Model):
     name = models.CharField(max_length=20)
+    code = models.CharField(max_length=12, unique=True, default=new_learner_code)
     utc_offset_minutes = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     usage_on = models.DateField(null=True, blank=True)

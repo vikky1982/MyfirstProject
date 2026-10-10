@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import date, datetime, timedelta, timezone as dt_timezone
 
@@ -246,19 +247,28 @@ class PageTests(TestCase):
         self.assertRedirects(response, reverse("vocabulary:home"))
         return Learner.objects.get(name=name)
 
-    def test_welcome_and_resume_by_name(self):
-        self._join("O'Neil")
+    def test_return_code_reopens_progress_and_names_are_not_shared(self):
+        first = self._join("O'Neil")
+        self.client.post(reverse("vocabulary:switch"))
+        same_name = self.client.post(
+            reverse("vocabulary:welcome"),
+            {"name": "o'neil", "tz_offset": "0"},
+        )
+        self.assertRedirects(same_name, reverse("vocabulary:home"))
+        self.assertEqual(Learner.objects.count(), 2)
         self.client.post(reverse("vocabulary:switch"))
         again = self.client.post(
             reverse("vocabulary:welcome"),
-            {"name": "o'neil", "tz_offset": "60"},
+            {"code": first.code.upper(), "tz_offset": "60"},
         )
         self.assertRedirects(again, reverse("vocabulary:home"))
-        self.assertEqual(Learner.objects.count(), 1)
-        learner = Learner.objects.get()
-        self.assertEqual(learner.utc_offset_minutes, 60)
+        self.assertEqual(Learner.objects.count(), 2)
+        first.refresh_from_db()
+        self.assertEqual(first.utc_offset_minutes, 60)
         rejected = Client().post(reverse("vocabulary:welcome"), {"name": "Maya2"})
         self.assertContains(rejected, "Use a name")
+        missing = Client().post(reverse("vocabulary:welcome"), {"code": "nope"})
+        self.assertContains(missing, "not found")
 
     def test_learning_stops_at_five_and_records_progress(self):
         self._join()
@@ -343,3 +353,13 @@ class PageTests(TestCase):
     def test_employee_pages_still_open(self):
         response = self.client.get("/employee/")
         self.assertEqual(response.status_code, 200)
+
+    def test_public_site_hides_employee_pages(self):
+        os.environ["DJANGO_PUBLIC"] = "1"
+        try:
+            response = self.client.get("/employee/")
+            self.assertEqual(response.status_code, 404)
+            admin = self.client.get("/admin/")
+            self.assertEqual(admin.status_code, 404)
+        finally:
+            del os.environ["DJANGO_PUBLIC"]

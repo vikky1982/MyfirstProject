@@ -61,11 +61,11 @@ def welcome(request):
     error = None
     if request.method == "POST":
         offset = services.parse_offset(request.POST.get("tz_offset"))
-        learner_id = request.POST.get("learner_id")
-        if learner_id:
-            learner = Learner.objects.filter(pk=learner_id).first()
+        raw_code = (request.POST.get("code") or "").strip()
+        if raw_code:
+            learner = services.learner_from_code(raw_code)
             if learner is None:
-                error = "That player could not be found."
+                error = "That return code was not found. Check it and try again."
             else:
                 learner.utc_offset_minutes = offset
                 learner.save(update_fields=["utc_offset_minutes"])
@@ -76,20 +76,17 @@ def welcome(request):
             if not name:
                 error = "Use a name with letters, like Maya or Jo."
             else:
-                learner = Learner.objects.filter(name__iexact=name).first()
-                if learner is None:
-                    learner = Learner.objects.create(
-                        name=name, utc_offset_minutes=offset
-                    )
-                else:
-                    learner.utc_offset_minutes = offset
-                    learner.save(update_fields=["utc_offset_minutes"])
+                learner = services.create_learner(name, offset)
                 request.session["learner_id"] = learner.id
+                request.session["day_note"] = (
+                    f"Your return code is {learner.code}. Write it down. "
+                    "Type it on the first page to open this progress on another device."
+                )
                 return redirect("vocabulary:home")
     return render(
         request,
         "vocabulary/welcome.html",
-        {"error": error, "players": services.recent_learners()},
+        {"error": error},
     )
 
 

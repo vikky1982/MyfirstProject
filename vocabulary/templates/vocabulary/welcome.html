@@ -6,23 +6,13 @@
   <h1>Five new words a day.</h1>
   <p class="lead">They start friendly and get harder as you grow. After 30 words, you take a quiz. The app stops after 15 minutes so your brain can rest.</p>
   {% if error %}<p class="banner is-bad" role="alert">{{ error }}</p>{% endif %}
-  {% if players %}
-    <h2 class="section-title">Jump back in</h2>
-    <div class="player-row">
-      {% for player in players %}
-        <form method="post">
-          {% csrf_token %}
-          <input type="hidden" name="tz_offset" class="tz-offset" value="0">
-          <button class="player" type="submit" name="learner_id" value="{{ player.id }}">{{ player.name }}</button>
-        </form>
-      {% endfor %}
-    </div>
-  {% endif %}
   <form method="post" class="stack">
     {% csrf_token %}
     <input type="hidden" name="tz_offset" class="tz-offset" value="0">
-    <label for="name">{% if players %}Or start a new player{% else %}What should Olive call you?{% endif %}</label>
-    <input id="name" name="name" maxlength="20" autocomplete="nickname" required placeholder="Your name" autofocus>
+    <label for="name">What should Olive call you?</label>
+    <input id="name" name="name" maxlength="20" autocomplete="nickname" placeholder="Your name" autofocus>
+    <label for="code">Return code, if you already have one</label>
+    <input id="code" name="code" maxlength="12" autocapitalize="off" spellcheck="false" placeholder="Leave blank the first time">
     <button class="primary" type="submit">Let's go</button>
   </form>
 </section>

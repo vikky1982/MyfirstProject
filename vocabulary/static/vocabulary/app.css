@@ -347,6 +347,11 @@ input[type="text"], input[type="search"], input:not([type]) {
   align-items: center;
 }
 
+.code {
+  letter-spacing: 0.08em;
+  font-size: 1.05rem;
+}
+
 .linkish {
   background: none;
   border: 0;

@@ -18,7 +18,9 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000/ and enter a name. The older employee pages are still at `/employee/`.
+Open http://127.0.0.1:8000/ and enter a name. Olive gives you a return code so the same progress can be opened on another device. The same first name does not share someone else's words.
+
+The older employee pages are still at `/employee/` on your own computer. They are hidden when the site is started for the public internet.
 
 ## Tests
 
