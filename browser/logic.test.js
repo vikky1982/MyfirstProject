@@ -62,38 +62,24 @@ replay.name = "Sam";
 replay.sparkies = 4;
 studyDay(replay, "2026-01-01");
 assert.strictEqual(quest.screen(replay, words, "2026-01-01"), "done");
-quest.keepPlaying(replay, words, "2026-01-01");
-assert.strictEqual(replay.assigned.length, 20);
-assert.strictEqual(quest.board(replay, words, "2026-01-01").length, 10);
-assert.strictEqual(quest.screen(replay, words, "2026-01-01"), "learn");
+quest.ensurePlan(replay, words, "2026-01-01");
+assert.strictEqual(replay.assigned.length, 10);
 
 const round = quest.blankState();
 round.name = "Sam";
 round.sparkies = 7;
-const cursor = "2026-03-01";
-for (let guard = 0; guard < 80; guard++) {
-  const mode = quest.screen(round, words, cursor);
-  if (mode === "champion") break;
-  if (mode === "quiz" || mode === "result") {
-    const quiz = round.quiz && !round.quiz.done ? round.quiz : quest.startQuiz(round, words);
-    quiz.questions.forEach((question, index) => {
-      if (!question.selected) quest.answerQuiz(round, index, question.correct, cursor);
-    });
-    round.quiz = null;
-    quest.ensurePlan(round, words, cursor);
-    continue;
-  }
-  if (mode === "done") {
-    quest.keepPlaying(round, words, cursor);
-    continue;
-  }
-  studyDay(round, cursor);
-}
-assert.strictEqual(quest.screen(round, words, cursor), "champion");
-quest.keepPlaying(round, words, cursor);
+round.assigned = words.map((word) => ({ text: word.text, on: "2026-03-01" }));
+round.learned = words.map((word) => ({ text: word.text, on: "2026-03-01" }));
+round.quizzes = { 180: { score: 10, total: 10, done: true } };
+round.planDate = "2026-03-01";
+round.planWords = words.slice(-10).map((word) => word.text);
+assert.strictEqual(quest.screen(round, words, "2026-03-01"), "champion");
+const restarted = quest.board(round, words, "2026-03-02").filter((item) => !item.learned);
 assert.strictEqual(round.sparkies, 7);
-assert.strictEqual(round.assigned.length, 10);
-assert.strictEqual(quest.screen(round, words, cursor), "learn");
+assert.strictEqual(round.round, 2);
+assert.strictEqual(restarted.length, 10);
+assert.ok(restarted.every((item) => item.word.level === 1));
+assert.strictEqual(quest.screen(round, words, "2026-03-02"), "learn");
 
 const first = quest.currentWord(fresh, words, "2026-01-01");
 const easy = quest.blankState();
@@ -106,8 +92,10 @@ options.forEach((choice) => {
 });
 assert.ok(first);
 
+let remaining = quest.tick(easy, "2026-01-01", false);
+assert.strictEqual(remaining, 15 * 60);
 easy.secondsUsed = 15 * 60;
-assert.strictEqual(quest.screen(easy, words, "2026-01-01"), "learn");
-assert.strictEqual(quest.tick(), null);
+easy.usageDate = "2026-01-01";
+assert.strictEqual(quest.screen(easy, words, "2026-01-01"), "timeup");
 
 console.log("browser logic ok");

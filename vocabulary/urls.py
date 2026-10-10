@@ -9,7 +9,6 @@ urlpatterns = [
     path("start/", views.welcome, name="welcome"),
     path("switch/", views.switch, name="switch"),
     path("learn/", views.learn, name="learn"),
-    path("continue/", views.continue_set, name="continue"),
     path("quiz/", views.quiz, name="quiz"),
     path("quiz/<int:attempt_id>/", views.quiz, name="quiz_attempt"),
     path("quiz/<int:attempt_id>/result/", views.quiz_result, name="quiz_result"),

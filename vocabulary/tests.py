@@ -140,15 +140,34 @@ class ServiceTests(TestCase):
         services.ensure_daily_plan(self.learner, self.today)
         self.assertEqual(Assignment.objects.filter(learner=self.learner).count(), 10)
 
-    def test_continue_opens_another_set_the_same_day(self):
-        self._finish_board(self.today)
-        services.continue_set(self.learner, self.today)
-        pending = [
-            item for item in services.today_board(self.learner, self.today) if not item.learned
-        ]
-        self.assertEqual(len(pending), 10)
-        self.assertEqual(Assignment.objects.filter(learner=self.learner).count(), 20)
-        self.assertEqual([item.word.sequence for item in pending], list(range(11, 21)))
+    def test_a_finished_bank_starts_again_the_next_day(self):
+        words = list(Word.objects.order_by("level", "sequence"))
+        Assignment.objects.bulk_create(
+            [
+                Assignment(
+                    learner=self.learner,
+                    word=word,
+                    assigned_on=self.today,
+                    position=index,
+                    learned=True,
+                    learned_on=self.today,
+                )
+                for index, word in enumerate(words, start=1)
+            ]
+        )
+        QuizAttempt.objects.create(
+            learner=self.learner,
+            milestone=180,
+            score=10,
+            total=10,
+            completed_on=self.today,
+        )
+        tomorrow = self.today + timedelta(days=1)
+        board = services.today_board(self.learner, tomorrow)
+        self.assertEqual(len(board), 10)
+        self.assertEqual([item.word.level for item in board], [1] * 10)
+        self.assertEqual([item.word.sequence for item in board], list(range(1, 11)))
+        self.assertEqual(Assignment.objects.filter(learner=self.learner).count(), 10)
 
     def test_first_choices_do_not_spoil_future_words(self):
         assignment = services.current_assignment(self.learner, self.today)
@@ -296,7 +315,7 @@ class PageTests(TestCase):
         self.assertRedirects(extra, reverse("vocabulary:home"))
         self.assertEqual(Assignment.objects.count(), 10)
         home = self.client.get(reverse("vocabulary:home"))
-        self.assertContains(home, "Ten words are done")
+        self.assertContains(home, "You did it for today")
         progress = self.client.get(reverse("vocabulary:progress"))
         self.assertContains(progress, "10 words learned")
         review = self.client.get(reverse("vocabulary:review"))
@@ -322,8 +341,10 @@ class PageTests(TestCase):
         learner.seconds_used = services.DAILY_LIMIT_SECONDS
         learner.save(update_fields=["usage_on", "seconds_used"])
         response = self.client.get(reverse("vocabulary:learn"))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Hear it")
+        self.assertRedirects(response, reverse("vocabulary:timeup"))
+        locked = self.client.get(reverse("vocabulary:timeup"))
+        self.assertContains(locked, "15 minutes")
+        self.assertNotContains(locked, "Start today's words")
 
     def test_quiz_page_after_thirty_words(self):
         learner = self._join()

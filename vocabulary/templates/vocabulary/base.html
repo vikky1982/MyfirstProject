@@ -52,7 +52,7 @@
     {% block content %}{% endblock %}
   </main>
   <footer class="foot">
-    <p>10 new words at a time · a quiz every 30 · play as long as you like</p>
+    <p>10 new words a day · a quiz every 30 · 15 minutes, then rest</p>
     {% if learner %}
       <p>Return code <strong class="code">{{ learner.code }}</strong></p>
       <form method="post" action="{% url 'vocabulary:switch' %}">

@@ -9,7 +9,7 @@
     {% elif snap.state == "done" %}
       You did it for today.
     {% elif snap.state == "champion" %}
-      You learned the whole path.
+      This round is complete.
     {% elif snap.current and snap.current != snap.board.0 %}
       Ready to continue?
     {% else %}
@@ -26,15 +26,11 @@
       <p>You have learned {{ snap.learned_count }} words. Show what you remember with 10 questions.</p>
       <a class="primary" href="{% url 'vocabulary:quiz' %}">Start the quiz</a>
     {% elif snap.state == "champion" %}
-      <p>Sparkies stay with you on the browser game. Here, the words can start again from the friendly ones.</p>
-      <form method="post" action="{% url 'vocabulary:continue' %}">{% csrf_token %}
-        <button class="primary" type="submit">Play again</button>
-      </form>
+      <p>There is no last word. Tomorrow starts again at the beginning, and the list keeps going.</p>
+      <a class="secondary" href="{% url 'vocabulary:review' %}">Review what you know</a>
     {% elif snap.state == "done" %}
-      <p>Ten words are done. The next ten are ready, and they get harder as you climb.</p>
-      <form method="post" action="{% url 'vocabulary:continue' %}">{% csrf_token %}
-        <button class="primary" type="submit">Keep playing</button>
-      </form>
+      <p>Come back tomorrow. The next ten words will be a step harder.</p>
+      <a class="secondary" href="{% url 'vocabulary:review' %}">Review what you know</a>
     {% else %}
       <p>Today's level: {{ snap.current_level.emoji }} {{ snap.current_level.name }}. {{ snap.current_level.blurb }}</p>
       {% if snap.board %}
