@@ -43,11 +43,19 @@
   }
 
   function burst(x, y) {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var layer = document.getElementById("sparkles");
+    if (!layer) return;
+    var pop = document.createElement("span");
+    pop.className = "sparkie-pop";
+    pop.textContent = "+1 ✦";
+    pop.style.left = x + "px";
+    pop.style.top = y + "px";
+    layer.appendChild(pop);
+    setTimeout(function () { pop.remove(); }, 1100);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     var glyphs = ["✦", "✧", "✸", "★", "✶"];
     var colors = ["#f0b429", "#e36a45", "#2f7d4a", "#fff4c2", "#7eb6d9"];
-    for (var i = 0; i < 26; i++) {
+    for (var i = 0; i < 32; i++) {
       var spark = document.createElement("span");
       spark.className = "spark";
       spark.textContent = glyphs[i % glyphs.length];
@@ -55,11 +63,24 @@
       spark.style.top = y + "px";
       spark.style.color = colors[i % colors.length];
       var angle = Math.random() * Math.PI * 2;
-      var dist = 50 + Math.random() * 140;
+      var dist = 60 + Math.random() * 160;
       spark.style.setProperty("--dx", Math.cos(angle) * dist + "px");
-      spark.style.setProperty("--dy", Math.sin(angle) * dist - 30 + "px");
+      spark.style.setProperty("--dy", Math.sin(angle) * dist - 40 + "px");
       layer.appendChild(spark);
-      setTimeout(function (node) { node.remove(); }, 750, spark);
+      setTimeout(function (node) { node.remove(); }, 1100, spark);
+    }
+  }
+
+  function giveSparkie(x, y) {
+    state.sparkies = (state.sparkies || 0) + 1;
+    save();
+    burst(x, y);
+    var badge = document.getElementById("sparkie-count");
+    if (badge) {
+      badge.textContent = "✦ " + state.sparkies;
+      badge.classList.remove("pop");
+      void badge.offsetWidth;
+      badge.classList.add("pop");
     }
   }
 
@@ -87,12 +108,23 @@
     if (!state.name || locked) {
       nav.hidden = true;
       timer.hidden = true;
-      who.textContent = "";
+      var hiddenBadge = document.getElementById("sparkie-count");
+      if (hiddenBadge) hiddenBadge.hidden = true;
+      who.textContent = state.name ? "✦ " + (state.sparkies || 0) + " sparkies" : "";
       return;
     }
     nav.hidden = false;
     nav.innerHTML = '<button type="button" data-go="home">Today</button><button type="button" data-go="review">Review</button><button type="button" data-go="progress">Progress</button>';
     timer.hidden = false;
+    var badge = document.getElementById("sparkie-count");
+    if (!badge) {
+      badge = document.createElement("div");
+      badge.id = "sparkie-count";
+      badge.className = "sparkie-count";
+      timer.parentNode.insertBefore(badge, timer);
+    }
+    badge.hidden = false;
+    badge.textContent = "✦ " + (state.sparkies || 0);
     var left = remaining();
     timer.classList.toggle("is-low", left <= 120);
     timer.querySelector("[data-clock]").textContent = clock(left);
@@ -401,27 +433,26 @@
       }
       if (quest.quizDue(state)) note = { kind: "level", text: "You have learned " + state.learned.length + " words. Quiz time!" };
       else if (quest.wordsFinished(state, day)) note = { kind: "good", text: "Those are your words for today. Come back tomorrow for five more." };
+      if (result.fresh) giveSparkie(point.left + point.width / 2, point.top + point.height / 2);
       save();
-      var sparkleAt = { x: point.left + point.width / 2, y: point.top + point.height / 2 };
       setTimeout(function () {
-        draw(quest.wordsFinished(state, day) || quest.quizDue(state) ? "home" : "learn", sparkleAt);
-      }, 650);
-      burst(sparkleAt.x, sparkleAt.y);
+        draw(quest.wordsFinished(state, day) || quest.quizDue(state) ? "home" : "learn");
+      }, 900);
       return;
     }
     if (kind === "quiz") {
       var index = Number(form.getAttribute("data-index"));
       var before = state.quiz.questions[index];
-      var correct = before && choice === before.correct;
+      var correct = before && !before.selected && choice === before.correct;
       quest.answerQuiz(state, index, choice, day);
-      save();
       if (correct && button) {
         var rect = button.getBoundingClientRect();
-        burst(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        giveSparkie(rect.left + rect.width / 2, rect.top + rect.height / 2);
       }
+      save();
       setTimeout(function () {
-        draw(state.quiz && state.quiz.done ? "result" : "quiz", state.quiz && state.quiz.done && state.quiz.score >= 8 ? { x: window.innerWidth / 2, y: 160 } : null);
-      }, correct ? 500 : 0);
+        draw(state.quiz && state.quiz.done ? "result" : "quiz");
+      }, correct ? 900 : 0);
     }
   });
 

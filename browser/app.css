@@ -182,7 +182,33 @@ blockquote, .example { margin: 1rem 0; padding: 0.8rem 1rem; background: var(--s
   animation: burst 720ms ease-out forwards;
 }
 @keyframes burst {
-  to { transform: translate(var(--dx), var(--dy)) scale(0.3) rotate(140deg); opacity: 0; }
+  to { transform: translate(var(--dx), var(--dy)) scale(0.4) rotate(140deg); opacity: 0; }
+}
+.spark { font-size: 1.6rem; }
+.sparkie-count {
+  margin-left: auto;
+  background: #fff4c2;
+  color: #8a5a00;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 0.45rem 0.8rem;
+  box-shadow: var(--shadow);
+}
+.timer { margin-left: 0; }
+.sparkie-count.pop { animation: pop 0.45s ease; }
+.sparkie-pop {
+  position: fixed;
+  font-weight: 800;
+  font-size: 1.6rem;
+  color: #e36a45;
+  transform: translate(-50%, -50%);
+  animation: floatup 1s ease-out forwards;
+}
+@keyframes pop {
+  40% { transform: scale(1.25); }
+}
+@keyframes floatup {
+  to { transform: translate(-50%, -80px); opacity: 0; }
 }
 @keyframes shake {
   20% { transform: translateX(-6px); }
